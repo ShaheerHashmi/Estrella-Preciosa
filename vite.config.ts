@@ -43,9 +43,9 @@ function serveImagesPlugin(): Plugin {
               fs.writeFileSync(path.join(distDir, cleanName), buffer);
             }
 
-            console.log(`[persist-asset] Successfully saved ${cleanName} (${buffer.length} bytes) to public/`);
+            console.log(`[persist-asset] Successfully saved/overwrote ${cleanName} (${buffer.length} bytes) in public/ and dist/`);
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({ success: true, path: `/${cleanName}` }));
+            return res.end(JSON.stringify({ success: true, path: `/${cleanName}`, bytes: buffer.length }));
           } catch (e: any) {
             console.error('[persist-asset] Error saving file:', e);
             res.statusCode = 500;
