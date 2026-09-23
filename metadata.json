@@ -1,0 +1,6 @@
+{
+  "name": "Estrella's 21st - Interactive Stained Glass Advent Calendar",
+  "description": "An interactive 21-panel stained glass advent calendar celebrating Estrella's 21st birthday, transitioning from monochrome to radiant color as gifts and stories are unveiled.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
