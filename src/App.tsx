@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ZoomIn, ZoomOut, RotateCcw, Sparkles, Upload, CheckCircle2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Sparkles, Upload, CheckCircle2, Save, HardDrive, RefreshCw } from 'lucide-react';
 import { PANEL_REGIONS } from './data/panelRegions';
 import { GIFTS_DATA } from './data/giftsData';
 import { GiftModal } from './components/GiftModal';
@@ -16,6 +16,8 @@ export default function App() {
   const [images, setImages] = useState<Record<string, string>>({});
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isSyncingAssets, setIsSyncingAssets] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [openedPanels, setOpenedPanels] = useState<number[]>(() => {
@@ -254,247 +256,7 @@ export default function App() {
     }
   };
 
-  // Background persistence of stored browser blobs to server public/ folder so they are permanent on disk
-  const syncStoredImagesToServer = async (stored: Record<string, string>) => {
-    return;
-    try {
-      const entries = Object.entries(stored);
-      if (entries.length === 0) return;
-      console.log(`[syncStoredImagesToServer] Evaluating ${entries.length} stored entries for server persistence...`);
-
-      const sentFiles = new Set<string>();
-
-      for (const [key, url] of entries) {
-        if (!url || !url.startsWith('blob:')) continue;
-
-        const filenames: string[] = [];
-        const lk = key.toLowerCase().trim();
-
-        // 1. Direct filenames with extension
-        if (/\.(png|jpe?g|webp|svg|mp3|wav|mp4)$/i.test(key)) {
-          filenames.push(key);
-        }
-
-        // 2. Hover cutouts
-        if (
-          lk.includes('hover') &&
-          !lk.includes('song') &&
-          !lk.includes('play') &&
-          !lk.includes('pause') &&
-          !lk.includes('stop') &&
-          !lk.includes('mapping')
-        ) {
-          const match = lk.match(/(\d+)/);
-          if (match) {
-            filenames.push(`${match[1]} - Hover.png`);
-          }
-        }
-
-        // 3. Progress images
-        if (lk.startsWith('progress_') || lk.startsWith('progress-') || lk.includes('progress')) {
-          const match = lk.match(/(\d+)/);
-          if (match) {
-            filenames.push(`progress_${match[1]}.png`);
-          }
-        }
-
-        // 4. Background
-        if (lk === 'background' || lk === 'monochrome') {
-          filenames.push('Background.png');
-        }
-
-        // 5. Video
-        if (lk.includes('video') && lk.includes('8')) {
-          filenames.push('Panel 8 - Intro Video.mp4');
-        }
-
-        // 6. Music Landing & Cassette
-        if (
-          lk === 'music-landing' ||
-          lk === 'panel-8-landing' ||
-          lk === 'gift-8-landing' ||
-          lk === 'music-home' ||
-          (lk.includes('music') && lk.includes('landing'))
-        ) {
-          filenames.push('music-landing.svg', 'music-landing.png');
-        }
-        if (lk.includes('cassette') && (lk.includes('playing') || lk.includes('play') || lk.includes('animat'))) {
-          filenames.push('cassette-playing.svg', 'cassette-playing.png');
-        }
-
-        // 7. Music Controls & Hovers
-        if (lk.includes('play') && lk.includes('hover')) {
-          filenames.push('play-hover.png');
-        }
-        if (lk.includes('pause') && lk.includes('hover')) {
-          filenames.push('pause-hover.png');
-        }
-        if (lk.includes('stop') && lk.includes('hover')) {
-          filenames.push('stop-hover.png');
-        }
-        if (lk.includes('mapping') || (lk.includes('hover') && lk.includes('map'))) {
-          filenames.push('hover-mapping.png');
-        }
-
-        // 8. Song Hovers (Songs 1 to 7)
-        if ((lk.includes('song') && (lk.includes('1') || lk.includes('one'))) || lk.includes('comet')) {
-          if (lk.includes('hover') || !lk.includes('audio')) {
-            filenames.push('song-1-hover.png');
-          }
-        }
-        if ((lk.includes('song') && (lk.includes('2') || lk.includes('two'))) || lk.includes('ring')) {
-          if (lk.includes('hover') || !lk.includes('audio')) {
-            filenames.push('song-2-hover.png');
-          }
-        }
-        if ((lk.includes('song') && (lk.includes('3') || lk.includes('three'))) || lk.includes('forget')) {
-          if (lk.includes('hover') || !lk.includes('audio')) {
-            filenames.push('song-3-hover.png');
-          }
-        }
-        if ((lk.includes('song') && (lk.includes('4') || lk.includes('four'))) || lk.includes('crane')) {
-          if (lk.includes('hover') || !lk.includes('audio')) {
-            filenames.push('song-4-hover.png');
-          }
-        }
-        if ((lk.includes('song') && (lk.includes('5') || lk.includes('five'))) || lk.includes('cupcake')) {
-          if (lk.includes('hover') || !lk.includes('audio')) {
-            filenames.push('song-5-hover.png');
-          }
-        }
-        if ((lk.includes('song') && (lk.includes('6') || lk.includes('six'))) || lk.includes('polaroid')) {
-          if (lk.includes('hover') || !lk.includes('audio')) {
-            filenames.push('song-6-hover.png');
-          }
-        }
-        if ((lk.includes('song') && (lk.includes('7') || lk.includes('seven'))) || lk.includes('tracklist')) {
-          if (lk.includes('hover') || !lk.includes('audio')) {
-            filenames.push('song-7-hover.png');
-          }
-        }
-
-        // 9. Song Audio files
-        if (
-          (lk.includes('song') && (lk.includes('1') || lk.includes('one')) && lk.includes('audio')) ||
-          lk.includes('state line') ||
-          lk.includes('novo')
-        ) {
-          filenames.push('song-1.mp3');
-        }
-        if (
-          (lk.includes('song') && (lk.includes('2') || lk.includes('two')) && lk.includes('audio')) ||
-          lk.includes('waiting room')
-        ) {
-          filenames.push('song-2.mp3');
-        }
-        if (
-          (lk.includes('song') && (lk.includes('3') || lk.includes('three')) && lk.includes('audio')) ||
-          lk.includes('oceans') ||
-          lk.includes('seafret')
-        ) {
-          filenames.push('song-3.mp3');
-        }
-        if (
-          (lk.includes('song') && (lk.includes('4') || lk.includes('four')) && lk.includes('audio')) ||
-          lk.includes("where's my love") ||
-          lk.includes('syml')
-        ) {
-          filenames.push('song-4.mp3');
-        }
-        if (
-          (lk.includes('song') && (lk.includes('5') || lk.includes('five')) && lk.includes('audio')) ||
-          lk.includes('before you go') ||
-          lk.includes('capaldi')
-        ) {
-          filenames.push('song-5.mp3');
-        }
-        if (
-          (lk.includes('song') && (lk.includes('6') || lk.includes('six')) && lk.includes('audio')) ||
-          lk.includes('scott street')
-        ) {
-          filenames.push('song-6.mp3');
-        }
-        if (
-          (lk.includes('song') && (lk.includes('7') || lk.includes('seven')) && lk.includes('audio')) ||
-          lk.includes('bags') ||
-          lk.includes('clairo')
-        ) {
-          filenames.push('song-7.mp3');
-        }
-
-        // 10. Gift Items
-        // Panel 5 dual items: 5-1 and 5-2
-        if (
-          lk.includes('5') &&
-          (lk.includes('-1') || lk.includes('_1') || lk.includes('.1') || lk.includes(' 1') || /5[\s_\-\.]1/.test(lk))
-        ) {
-          filenames.push('gift-5-1.png');
-        } else if (
-          lk.includes('5') &&
-          (lk.includes('-2') || lk.includes('_2') || lk.includes('.2') || lk.includes(' 2') || /5[\s_\-\.]2/.test(lk))
-        ) {
-          filenames.push('gift-5-2.png');
-        }
-        // Panel 11 dual items: 11 (or 11-1 / 11-2)
-        else if (
-          lk.includes('11') &&
-          (lk.includes('-1') || lk.includes('_1') || lk.includes('.1') || lk.includes(' 1') || /11[\s_\-\.]1/.test(lk))
-        ) {
-          filenames.push('gift-11-1.png');
-        } else if (lk.includes('11') && (lk.includes('gift') || lk === '11')) {
-          filenames.push('gift-11.png');
-        }
-        // Generic gifts 1 to 21
-        else if (lk.startsWith('gift') || lk.includes('gift') || /^\d+$/.test(lk)) {
-          const match = lk.match(/(\d+)/);
-          if (match) {
-            const pId = match[1];
-            filenames.push(`gift-${pId}.png`);
-          }
-        }
-
-        // Process each deduced filename
-        for (const fname of filenames) {
-          if (sentFiles.has(fname)) continue;
-          sentFiles.add(fname);
-
-          try {
-            const resp = await fetch(url);
-            const blob = await resp.blob();
-            const reader = new FileReader();
-            reader.onloadend = () => {
-              const base64 = reader.result as string;
-              if (base64) {
-                fetch('/api/persist-asset', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ filename: fname, base64 }),
-                })
-                  .then((r) => r.json())
-                  .then((d) => console.log(`[syncStoredImagesToServer] Persisted ${fname}:`, d))
-                  .catch((err) => console.warn(`[syncStoredImagesToServer] Failed to persist ${fname}:`, err));
-              }
-            };
-            reader.readAsDataURL(blob);
-          } catch (e) {
-            console.warn(`[syncStoredImagesToServer] Error reading blob for ${fname}:`, e);
-          }
-        }
-      }
-    } catch (e) {
-      console.error('[syncStoredImagesToServer] Global error:', e);
-    }
-  };
-
-  // Load all embedded window images from persistence
-  useEffect(() => {
-    getAllImagesFromDB().then((stored) => {
-      if (stored && Object.keys(stored).length > 0) {
-        healMusicAudioKeys(stored);
-        setImages(stored);
-      }
-    });
-  }, []);
+  // Persistence to server disk is handled cleanly by syncUploadedAssetsToDisk
 
   // Save opened panels progress
   const saveOpenedPanels = (panels: number[]) => {
@@ -2036,6 +1798,166 @@ export default function App() {
     }
     return '/hover-mapping.png';
   };
+
+  // Export and persist all user-uploaded blobs currently in IndexedDB/state directly to server public/ disk
+  const syncUploadedAssetsToDisk = async (storedMap?: Record<string, string>) => {
+    const targetMap = storedMap || images;
+    if (!targetMap || Object.keys(targetMap).length === 0) return 0;
+
+    setIsSyncingAssets(true);
+    setSyncStatus('Syncing your uploaded photos & assets to project disk...');
+
+    try {
+      const tasks: { filename: string; url: string }[] = [];
+      const seenFnames = new Set<string>();
+
+      const addBlobTask = (filename: string, url?: string) => {
+        if (url && url.startsWith('blob:') && !seenFnames.has(filename)) {
+          seenFnames.add(filename);
+          tasks.push({ filename, url });
+        }
+      };
+
+      // 1. Gift images 1 to 21
+      for (let p = 1; p <= 21; p++) {
+        const giftImgs = getGiftImagesForPanel(p, targetMap);
+        if (p === 5) {
+          if (giftImgs[0]) {
+            addBlobTask('gift-5-1.png', giftImgs[0]);
+            addBlobTask('gift-5.png', giftImgs[0]);
+          }
+          if (giftImgs[1]) {
+            addBlobTask('gift-5-2.png', giftImgs[1]);
+          }
+        } else if (p === 11) {
+          if (giftImgs[0]) {
+            addBlobTask('gift-11.png', giftImgs[0]);
+          }
+          if (giftImgs[1]) {
+            addBlobTask('gift-11-1.png', giftImgs[1]);
+          }
+        } else {
+          if (giftImgs[0]) {
+            addBlobTask(`gift-${p}.png`, giftImgs[0]);
+          }
+        }
+      }
+
+      // 2. Stained glass hover cutouts 1 to 21
+      for (let p = 1; p <= 21; p++) {
+        const hoverImg = getPanelHoverImage(p, targetMap);
+        addBlobTask(`${p} - Hover.png`, hoverImg);
+      }
+
+      // 3. Progressive unlock states
+      for (let m = 1; m <= 21; m++) {
+        const progKey = Object.keys(targetMap).find((k) => {
+          const lk = k.toLowerCase();
+          if (!lk.includes('progress')) return false;
+          const match = lk.match(/(\d+)/);
+          return match && parseInt(match[1], 10) === m;
+        });
+        if (progKey) addBlobTask(`progress_${m}.png`, targetMap[progKey]);
+      }
+      const bgKey = Object.keys(targetMap).find(
+        (k) => k.toLowerCase() === 'background' || k.toLowerCase() === 'monochrome'
+      );
+      if (bgKey) addBlobTask('Background.png', targetMap[bgKey]);
+
+      // 4. Panel 8 experience media
+      addBlobTask('Panel 8 - Intro Video.mp4', getPanel8Video(targetMap));
+      addBlobTask('play state - animated svg.svg', getMusicCassettePlayingSvg(targetMap));
+      addBlobTask('play-hover.png', getMusicPlayHoverImage(targetMap));
+      addBlobTask('pause-hover.png', getMusicPauseHoverImage(targetMap));
+      addBlobTask('stop-hover.png', getMusicStopHoverImage(targetMap));
+      addBlobTask('hover-mapping.png', getMusicHoverMappingImage(targetMap));
+      addBlobTask('hover mapping.png', getMusicHoverMappingImage(targetMap));
+      addBlobTask('music-landing.svg', getPanel8LandingImage(targetMap));
+      addBlobTask('music-landing.png', getPanel8LandingImage(targetMap));
+
+      addBlobTask('song-1-hover.png', getSong1HoverImage(targetMap));
+      addBlobTask('song-2-hover.png', getSong2HoverImage(targetMap));
+      addBlobTask('song-3-hover.png', getSong3HoverImage(targetMap));
+      addBlobTask('song-4-hover.png', getSong4HoverImage(targetMap));
+      addBlobTask('song-5-hover.png', getSong5HoverImage(targetMap));
+      addBlobTask('song-6-hover.png', getSong6HoverImage(targetMap));
+      addBlobTask('song-7-hover.png', getSong7HoverImage(targetMap));
+
+      // Audio files
+      addBlobTask('start button sound.mp3', getPlayClickAudio(targetMap));
+      addBlobTask('pause button sound.mp3', getPauseClickAudio(targetMap));
+      addBlobTask('song-1.mp3', getSong1Audio(targetMap));
+      addBlobTask('song-2.mp3', getSong2Audio(targetMap));
+      addBlobTask('song-3.mp3', getSong3Audio(targetMap, getSong1Audio(targetMap), getSong2Audio(targetMap)));
+      addBlobTask('song-4.mp3', getSong4Audio(targetMap, getSong1Audio(targetMap), getSong2Audio(targetMap), getSong3Audio(targetMap)));
+      addBlobTask('song-5.mp3', getSong5Audio(targetMap));
+      addBlobTask('song-6.mp3', getSong6Audio(targetMap));
+      addBlobTask('song-7.mp3', getSong7Audio(targetMap));
+
+      // Also check any direct filename keys in targetMap
+      for (const [rawKey, url] of Object.entries(targetMap)) {
+        if (!url || !url.startsWith('blob:')) continue;
+        if (/\.(png|jpe?g|webp|svg|mp3|mp4)$/i.test(rawKey)) {
+          addBlobTask(rawKey, url);
+        }
+      }
+
+      if (tasks.length === 0) {
+        setIsSyncingAssets(false);
+        setSyncStatus('All current assets are already synced to disk.');
+        setTimeout(() => setSyncStatus(null), 3000);
+        return 0;
+      }
+
+      console.log(`[syncUploadedAssetsToDisk] Syncing ${tasks.length} blob assets to public/ disk...`);
+      let successCount = 0;
+      for (const { filename, url } of tasks) {
+        try {
+          const resp = await fetch(url);
+          const blob = await resp.blob();
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          if (base64) {
+            await fetch('/api/persist-asset', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ filename, base64 }),
+            });
+            successCount++;
+          }
+        } catch (err) {
+          console.warn(`[syncUploadedAssetsToDisk] Error syncing ${filename}:`, err);
+        }
+      }
+
+      console.log(`[syncUploadedAssetsToDisk] Done! Saved ${successCount} assets to public/ disk.`);
+      setSyncStatus(`✓ Successfully saved ${successCount} uploaded asset${successCount === 1 ? '' : 's'} to disk! Ready to push to GitHub.`);
+      setTimeout(() => setSyncStatus(null), 8000);
+      return successCount;
+    } catch (e) {
+      console.error('[syncUploadedAssetsToDisk] Error:', e);
+      setSyncStatus('Error saving some assets to disk');
+      setTimeout(() => setSyncStatus(null), 5000);
+      return 0;
+    } finally {
+      setIsSyncingAssets(false);
+    }
+  };
+
+  // Load all embedded window images from persistence on mount and auto-sync to server public/ folder
+  useEffect(() => {
+    getAllImagesFromDB().then((stored) => {
+      if (stored && Object.keys(stored).length > 0) {
+        healMusicAudioKeys(stored);
+        setImages(stored);
+        // Automatically sync all uploaded blobs from IndexedDB to project disk
+        syncUploadedAssetsToDisk(stored);
+      }
+    });
+  }, []);
 
   // Dedicated media uploader for Panel 8
   const handlePanel8UploadMedia = async (file: File, type: 'video' | 'landing') => {

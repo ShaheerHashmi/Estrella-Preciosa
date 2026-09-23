@@ -33,10 +33,6 @@ function serveImagesPlugin(): Plugin {
               fs.mkdirSync(publicDir, { recursive: true });
             }
             const filePath = path.join(publicDir, cleanName);
-            if (fs.existsSync(filePath)) {
-              res.setHeader('Content-Type', 'application/json');
-              return res.end(JSON.stringify({ success: true, path: `/${cleanName}`, cached: true }));
-            }
             const base64Data = base64.replace(/^data:[^;]+;base64,/, '');
             const buffer = Buffer.from(base64Data, 'base64');
             fs.writeFileSync(filePath, buffer);
