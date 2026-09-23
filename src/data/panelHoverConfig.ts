@@ -152,7 +152,7 @@ export interface UnlockProgressDefinition {
 export const HARDCODED_UNLOCK_PROGRESS_STATES: Record<number, UnlockProgressDefinition> = {
   0: {
     milestone: 0,
-    defaultSrc: '/Background.png',
+    defaultSrc: '/background.png',
     keys: ['background', 'Background.png', 'background.png', 'bg', 'monochrome', 'progress_0', 'progress0', 'progress-0'],
   },
   1: {

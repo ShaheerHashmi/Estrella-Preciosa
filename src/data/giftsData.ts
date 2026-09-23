@@ -32,7 +32,7 @@ I've made many a wish in my life, but wanted this bowl to encapsulate some of th
     story: `Ahhh the Estrella Preciosa pin, it's really pretty isn't it? :p Spoiler alert: None of the 21 had anything Scribbellz themed, but we've had such a precious time together bonding over the star comics and the wholesomeness of it all, what a perfect coincidence that I found this pin in my Newcastle trip? It symbolises a beautiful skyline in the confines of such an ethereal and out of this world star. See now why I thought it'd be the perfect pin to get you as part of this year's birthday gifts? 
 
 I hope and pray no matter where you keep this, that it reminds you to always let her shine and be her radiant, incandescent, gorgeous self through and through. To brighter and lighter tomorrows`,
-    imageSrc: '/gift-3.png',
+    imageSrc: '/gift-3.jpg',
     dateOrDay: 'Panel 3',
     category: 'Pin',
   },
@@ -50,7 +50,7 @@ I hope and pray no matter where you keep this, that it reminds you to always let
     title: 'EP Aesthetic Stickers',
     origin: 'Hampstead, London',
     story: `Okay, so this is part of one of the days prior to your finals where I'd gone on a mission to send you a spam but held back because I didn't want to exhaust you with the thoughts of a response while you were so deep in revision. So, I thought I'll show you a sneak peek of the stickers I got you that day from a cute lil art store. As you can probably tell in the pictures, they're the kind that suit your aesthetic quite well, esp the "Small Happiness" ones heh, lekin I'm quite glad that the coffee ones have lotsa bakery inspired ones too so they're up your alley as well. Already looking forward to seeing what you decorate with these :p`,
-    imageSrc: '/gift-5-1.png',
+    imageSrc: '/gift-5-1.jpg',
     dateOrDay: 'Panel 5',
     category: 'Stationery',
   },
@@ -77,7 +77,7 @@ I hope and pray no matter where you keep this, that it reminds you to always let
     title: 'Melodies of Memories',
     origin: 'St. Giles Crown Steeple',
     story: 'Standing at the center of the upper tier, a tribute to compassion, core values, and personal integrity.',
-    imageSrc: '/music-landing.svg',
+    imageSrc: '/music-landing.png',
     dateOrDay: 'Panel 8',
     category: 'Integrity',
   },
@@ -110,7 +110,7 @@ I made a mental note to make sure I got you something to commemorate seeing that
 Mini Babbu: He symbolises all the warmth of ambition, desire to grow, and to make the most of life. All the opportunities, the people, the sunrises, the phases of the moon, the falling and rising stars, all of them.
 
 Silly Goose: She symbolises a reminder for my fav silly goose to always lean into that side of hers because it is brilliant. The creative, playful, thoughtful side of her with beautiful depths. Oh, and she's in this pose because she wants to be booped :p`,
-    imageSrc: '/gift-11.png',
+    imageSrc: '/gift-11-1.jpg',
     dateOrDay: 'Panel 11',
     category: 'Figurines',
   },

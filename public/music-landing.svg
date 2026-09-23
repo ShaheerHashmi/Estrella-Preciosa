@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#121216" />
+      <stop offset="100%" stop-color="#08080a" />
+    </linearGradient>
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1e24" />
+      <stop offset="100%" stop-color="#141418" />
+    </linearGradient>
+    <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="50%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="800" height="600" fill="url(#bg-grad)" rx="16"/>
+  <rect x="2" y="2" width="796" height="596" fill="none" stroke="#27272a" stroke-width="1.5" rx="15"/>
+
+  <!-- Cassette Player Chassis -->
+  <g transform="translate(100, 70)" filter="url(#shadow)">
+    <!-- Main Shell -->
+    <rect width="600" height="380" rx="20" fill="url(#card-grad)" stroke="#3f3f46" stroke-width="2"/>
+    <rect x="20" y="20" width="560" height="340" rx="12" fill="#09090b" stroke="#27272a" stroke-width="1.5"/>
+
+    <!-- Cassette Window Well -->
+    <rect x="130" y="60" width="340" height="190" rx="10" fill="#18181b" stroke="#3f3f46" stroke-width="2"/>
+    <rect x="150" y="80" width="300" height="150" rx="8" fill="#121214" stroke="#27272a" stroke-width="1"/>
+
+    <!-- Spools and Tape -->
+    <g transform="translate(180, 115)">
+      <!-- Left Spool -->
+      <circle cx="45" cy="40" r="32" fill="#27272a" stroke="#fbbf24" stroke-width="2"/>
+      <circle cx="45" cy="40" r="14" fill="#09090b" stroke="#52525b" stroke-width="2"/>
+      <circle cx="45" cy="40" r="6" fill="#fbbf24"/>
+      <!-- Teeth -->
+      <path d="M45,28 L45,22 M45,52 L45,58 M33,40 L27,40 M57,40 L63,40" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+
+      <!-- Right Spool -->
+      <circle cx="195" cy="40" r="32" fill="#27272a" stroke="#fbbf24" stroke-width="2"/>
+      <circle cx="195" cy="40" r="14" fill="#09090b" stroke="#52525b" stroke-width="2"/>
+      <circle cx="195" cy="40" r="6" fill="#fbbf24"/>
+      <!-- Teeth -->
+      <path d="M195,28 L195,22 M195,52 L195,58 M183,40 L177,40 M207,40 L213,40" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+
+      <!-- Tape bridge -->
+      <rect x="85" y="32" width="70" height="16" rx="4" fill="#27272a" stroke="#3f3f46" stroke-width="1"/>
+      <!-- Tape window ruler -->
+      <line x1="95" y1="40" x2="145" y2="40" stroke="#71717a" stroke-width="1.5" stroke-dasharray="2 3"/>
+    </g>
+
+    <!-- Cassette Label -->
+    <rect x="170" y="270" width="260" height="34" rx="4" fill="#18181b" stroke="#3f3f46" stroke-width="1"/>
+    <text x="300" y="292" fill="#fbbf24" font-family="system-ui, sans-serif" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="2">ESTRELLA'S 21ST PLAYLIST</text>
+
+    <!-- Controls Panel -->
+    <g transform="translate(160, 316)">
+      <!-- Track items hint -->
+      <text x="140" y="38" fill="#a1a1aa" font-family="system-ui, sans-serif" font-size="11" text-anchor="middle">Select any of the 7 tracks or press Play below</text>
+    </g>
+  </g>
+
+  <!-- Bottom Hint -->
+  <text x="400" y="520" fill="#71717a" font-family="system-ui, sans-serif" font-size="12" text-anchor="middle" letter-spacing="0.5">Custom Stained Glass Audio Player</text>
+</svg>

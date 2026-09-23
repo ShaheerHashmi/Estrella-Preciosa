@@ -4,7 +4,7 @@ import { PANEL_REGIONS } from './data/panelRegions';
 import { GIFTS_DATA } from './data/giftsData';
 import { GiftModal } from './components/GiftModal';
 import { Panel8Experience } from './components/Panel8Experience';
-import { getAllImagesFromDB, saveImageToDB } from './utils/imageStore';
+import { getAllImagesFromDB, getAllBlobsFromDB, saveImageToDB, deleteImageFromDB } from './utils/imageStore';
 import { getStainedGlassHoverImage, getUnlockStateBaseImage } from './data/panelHoverConfig';
 
 const STORAGE_KEY = 'st_giles_opened_panels';
@@ -62,50 +62,20 @@ export default function App() {
       }
     }
 
-    // Find Oceans / Seafret / Song 3 audio in stored keys
-    let oceansUrl: string | undefined;
-    for (const [k, url] of Object.entries(stored)) {
+    // Purge any older cached untrimmed Song 3 audio blobs from browser storage
+    for (const [k] of Object.entries(stored)) {
       const lk = k.toLowerCase();
-      if (isImage(lk)) continue;
-      if (lk.includes('novo') || lk.includes('state line') || lk.includes('phoebe') || lk.includes('waiting')) continue;
       if (
-        lk.includes('seafret') ||
-        lk.includes('ocean') ||
-        lk.includes('dscvr') ||
-        lk.includes('vevo') ||
-        (lk.includes('forget') && (lk.endsWith('.mp3') || lk.endsWith('.wav') || lk.includes('audio'))) ||
-        ((lk.includes('song') || lk.includes('track')) && (lk.includes('3') || lk.includes('three')))
+        (lk.includes('song-3') ||
+          lk.includes('song_3') ||
+          lk.includes('song 3') ||
+          lk.includes('seafret') ||
+          lk.includes('oceans')) &&
+        !isImage(lk)
       ) {
-        oceansUrl = url;
-        break;
+        delete stored[k];
+        deleteImageFromDB(k);
       }
-    }
-
-    // If State Lines audio exists, ensure Song 1 keys point to it
-    if (stateLinesUrl) {
-      stored['song-1'] = stateLinesUrl;
-      stored['song-1-audio'] = stateLinesUrl;
-      stored['song 1'] = stateLinesUrl;
-      stored['state lines'] = stateLinesUrl;
-    }
-
-    // If Song 3 was mistakenly given State Lines (the bug reported by the user), fix it!
-    if (stateLinesUrl && stored['song-3'] === stateLinesUrl) {
-      if (oceansUrl) {
-        stored['song-3'] = oceansUrl;
-        stored['song-3-audio'] = oceansUrl;
-        stored['song 3'] = oceansUrl;
-        stored['oceans'] = oceansUrl;
-      } else {
-        delete stored['song-3'];
-        delete stored['song-3-audio'];
-        delete stored['song 3'];
-        delete stored['song3'];
-      }
-    } else if (oceansUrl && (!stored['song-3'] || isImage(stored['song-3']))) {
-      stored['song-3'] = oceansUrl;
-      stored['song-3-audio'] = oceansUrl;
-      stored['song 3'] = oceansUrl;
     }
 
     // Find Where's My Love / SYML / Song 4 audio in stored keys
@@ -256,23 +226,25 @@ export default function App() {
 
   // Background persistence of stored browser blobs to server public/ folder so they are permanent on disk
   const syncStoredImagesToServer = async (stored: Record<string, string>) => {
-    return;
     try {
       const entries = Object.entries(stored);
       if (entries.length === 0) return;
       console.log(`[syncStoredImagesToServer] Evaluating ${entries.length} stored entries for server persistence...`);
 
+      const rawBlobs = await getAllBlobsFromDB();
       const sentFiles = new Set<string>();
 
       for (const [key, url] of entries) {
-        if (!url || !url.startsWith('blob:')) continue;
+        if (!url) continue;
 
         const filenames: string[] = [];
         const lk = key.toLowerCase().trim();
 
         // 1. Direct filenames with extension
         if (/\.(png|jpe?g|webp|svg|mp3|wav|mp4)$/i.test(key)) {
-          filenames.push(key);
+          if (!lk.includes('song-3') && !lk.includes('song_3') && !lk.includes('song 3') && !lk.includes('oceans') && !lk.includes('seafret')) {
+            filenames.push(key);
+          }
         }
 
         // 2. Hover cutouts
@@ -300,7 +272,7 @@ export default function App() {
 
         // 4. Background
         if (lk === 'background' || lk === 'monochrome') {
-          filenames.push('Background.png');
+          filenames.push('background.png', 'Background.png');
         }
 
         // 5. Video
@@ -316,10 +288,10 @@ export default function App() {
           lk === 'music-home' ||
           (lk.includes('music') && lk.includes('landing'))
         ) {
-          filenames.push('music-landing.svg', 'music-landing.png');
+          filenames.push('music-landing.png');
         }
         if (lk.includes('cassette') && (lk.includes('playing') || lk.includes('play') || lk.includes('animat'))) {
-          filenames.push('cassette-playing.svg', 'cassette-playing.png');
+          filenames.push('cassette-playing.png');
         }
 
         // 7. Music Controls & Hovers
@@ -388,13 +360,6 @@ export default function App() {
           filenames.push('song-2.mp3');
         }
         if (
-          (lk.includes('song') && (lk.includes('3') || lk.includes('three')) && lk.includes('audio')) ||
-          lk.includes('oceans') ||
-          lk.includes('seafret')
-        ) {
-          filenames.push('song-3.mp3');
-        }
-        if (
           (lk.includes('song') && (lk.includes('4') || lk.includes('four')) && lk.includes('audio')) ||
           lk.includes("where's my love") ||
           lk.includes('syml')
@@ -423,33 +388,36 @@ export default function App() {
         }
 
         // 10. Gift Items
-        // Panel 5 dual items: 5-1 and 5-2
-        if (
-          lk.includes('5') &&
-          (lk.includes('-1') || lk.includes('_1') || lk.includes('.1') || lk.includes(' 1') || /5[\s_\-\.]1/.test(lk))
-        ) {
-          filenames.push('gift-5-1.png');
-        } else if (
-          lk.includes('5') &&
-          (lk.includes('-2') || lk.includes('_2') || lk.includes('.2') || lk.includes(' 2') || /5[\s_\-\.]2/.test(lk))
-        ) {
-          filenames.push('gift-5-2.png');
-        }
-        // Panel 11 dual items: 11 (or 11-1 / 11-2)
-        else if (
-          lk.includes('11') &&
-          (lk.includes('-1') || lk.includes('_1') || lk.includes('.1') || lk.includes(' 1') || /11[\s_\-\.]1/.test(lk))
-        ) {
-          filenames.push('gift-11-1.png');
-        } else if (lk.includes('11') && (lk.includes('gift') || lk === '11')) {
-          filenames.push('gift-11.png');
-        }
-        // Generic gifts 1 to 21
-        else if (lk.startsWith('gift') || lk.includes('gift') || /^\d+$/.test(lk)) {
-          const match = lk.match(/(\d+)/);
-          if (match) {
-            const pId = match[1];
-            filenames.push(`gift-${pId}.png`);
+        // Match specific gift sub-item formats: e.g. "gift-5-1", "gift_5_1", "gift-11-2", etc.
+        const giftSubMatch = lk.match(/^gift[\s_\-](\d+)[\s_\-\.](\d+)/i);
+        const giftSingleMatch = lk.match(/^gift[\s_\-](\d+)(?:\.\w+)?$/i);
+
+        if (giftSubMatch) {
+          const pId = parseInt(giftSubMatch[1], 10);
+          const subIdx = parseInt(giftSubMatch[2], 10);
+          if (pId === 5) {
+            if (subIdx === 1) {
+              filenames.push('gift-5.png', 'gift-5-1.png', 'gift-5.jpg', 'gift-5-1.jpg');
+            } else if (subIdx === 2) {
+              filenames.push('gift-5-2.png', 'gift-5-2.jpg');
+            }
+          } else if (pId === 11) {
+            if (subIdx === 1) {
+              filenames.push('gift-11.png', 'gift-11-1.png', 'gift-11.jpg', 'gift-11-1.jpg');
+            } else if (subIdx === 2) {
+              filenames.push('gift-11-2.png', 'gift-11-2.jpg');
+            }
+          } else {
+            filenames.push(`gift-${pId}-${subIdx}.png`, `gift-${pId}-${subIdx}.jpg`);
+          }
+        } else if (giftSingleMatch) {
+          const pId = parseInt(giftSingleMatch[1], 10);
+          if (pId === 5) {
+            filenames.push('gift-5.png', 'gift-5-1.png', 'gift-5.jpg', 'gift-5-1.jpg');
+          } else if (pId === 11) {
+            filenames.push('gift-11.png', 'gift-11-1.png', 'gift-11.jpg', 'gift-11-1.jpg');
+          } else {
+            filenames.push(`gift-${pId}.png`, `gift-${pId}.jpg`);
           }
         }
 
@@ -459,8 +427,17 @@ export default function App() {
           sentFiles.add(fname);
 
           try {
-            const resp = await fetch(url);
-            const blob = await resp.blob();
+            let blob: Blob | null = rawBlobs[key] || null;
+            if (!blob && url.startsWith('blob:')) {
+              try {
+                const resp = await fetch(url);
+                blob = await resp.blob();
+              } catch {
+                // Ignore fetch error if blob revoked
+              }
+            }
+            if (!blob) continue;
+
             const reader = new FileReader();
             reader.onloadend = () => {
               const base64 = reader.result as string;
@@ -492,6 +469,7 @@ export default function App() {
       if (stored && Object.keys(stored).length > 0) {
         healMusicAudioKeys(stored);
         setImages(stored);
+        syncStoredImagesToServer(stored);
       }
     });
   }, []);
@@ -549,155 +527,59 @@ export default function App() {
     const pStr = panelId.toString();
 
     // ==========================================
-    // 1. PANEL 5 (Must include 5-1 and 5-2)
+    // 1. PANEL 5: Dual items (5-1 Coffee stickers & 5-2 Small Happiness stickers)
     // ==========================================
     if (panelId === 5) {
-      let item1Url: string | undefined;
-      let item2Url: string | undefined;
-      const allP5Urls: string[] = [];
-
-      Object.entries(imgMap).forEach(([rawKey, url]) => {
-        const key = rawKey.toLowerCase().trim();
-        if (key.includes('progress') || key.includes('hover') || key === 'background') return;
-
-        // Check if key is related to panel 5
-        if (!key.includes('5')) return;
-
-        if (!allP5Urls.includes(url)) {
-          allP5Urls.push(url);
-        }
-
-        // Check if key is for item 1 (5-1, 5_1, 5.1, gift-5-1, gift_5_1, etc.)
-        if (
-          key === 'gift-5-1' ||
-          key === 'gift_5_1' ||
-          key === '5-1' ||
-          key === '5_1' ||
-          key.includes('5-1') ||
-          key.includes('5_1') ||
-          key.includes('5.1') ||
-          key.includes('5 1') ||
-          /5[\s_\-\.]1/i.test(key)
-        ) {
-          item1Url = url;
-          return;
-        }
-
-        // Check if key is for item 2 (5-2, 5_2, 5.2, gift-5-2, gift_5_2, etc.)
-        if (
-          key === 'gift-5-2' ||
-          key === 'gift_5_2' ||
-          key === '5-2' ||
-          key === '5_2' ||
-          key.includes('5-2') ||
-          key.includes('5_2') ||
-          key.includes('5.2') ||
-          key.includes('5 2') ||
-          /5[\s_\-\.]2/i.test(key)
-        ) {
-          item2Url = url;
-          return;
-        }
-      });
-
-      // If both item1 and item2 found with distinct URLs, return both
-      if (item1Url && item2Url && item1Url !== item2Url) {
-        return [item1Url, item2Url];
-      }
-
-      // If we have at least 2 distinct panel 5 images in map, return both
-      if (allP5Urls.length >= 2) {
-        if (item1Url) {
-          const second = allP5Urls.find((u) => u !== item1Url);
-          if (second) return [item1Url, second];
-        }
-        return [allP5Urls[0], allP5Urls[1]];
-      }
-
-      if (item1Url && item2Url) return [item1Url, item2Url];
-      if (item1Url) return [item1Url, '/gift-5-2.png'];
-      if (item2Url) return ['/gift-5-1.png', item2Url];
-      if (allP5Urls.length > 0) return [allP5Urls[0], '/gift-5-2.png'];
-
-      return ['/gift-5-1.png', '/gift-5-2.png'];
+      const item1 =
+        imgMap['gift-5-1'] ||
+        imgMap['5-1'] ||
+        imgMap['gift_5_1'] ||
+        imgMap['5_1'] ||
+        imgMap['gift-5'] ||
+        imgMap['gift_5'] ||
+        imgMap['gift 5'] ||
+        imgMap['gift5'] ||
+        '/gift-5-1.jpg';
+      const item2 =
+        imgMap['gift-5-2'] ||
+        imgMap['5-2'] ||
+        imgMap['gift_5_2'] ||
+        imgMap['5_2'] ||
+        imgMap['gift 5 2'] ||
+        '/gift-5-2.jpg';
+      return [item1, item2];
     }
 
     // ==========================================
-    // 2. PANEL 11 (Must include gift-11 and gift-11-1)
+    // 2. PANEL 11: Dual items (Base gift & Sub-item)
     // ==========================================
     if (panelId === 11) {
-      let item1Url: string | undefined; // Base gift (gift-11)
-      let item2Url: string | undefined; // Sub-item (gift-11-1)
-      const allP11Urls: string[] = [];
-
-      Object.entries(imgMap).forEach(([rawKey, url]) => {
-        const key = rawKey.toLowerCase().trim();
-        if (key.includes('progress') || key.includes('hover') || key === 'background') return;
-
-        if (!key.includes('11')) return;
-
-        if (!allP11Urls.includes(url)) {
-          allP11Urls.push(url);
-        }
-
-        // Check for sub-item: gift-11-1, 11-1, gift_11_1, gift-11-2, etc.
-        if (
-          key === 'gift-11-1' ||
-          key === 'gift_11_1' ||
-          key === '11-1' ||
-          key === '11_1' ||
-          key.includes('11-1') ||
-          key.includes('11_1') ||
-          key.includes('11.1') ||
-          key.includes('11 1') ||
-          key.includes('11-2') ||
-          key.includes('11_2') ||
-          /11[\s_\-\.]\d+/i.test(key)
-        ) {
-          item2Url = url;
-          return;
-        }
-
-        // Base gift: gift-11, gift_11, gift 11, gift11, 11
-        if (
-          key === 'gift-11' ||
-          key === 'gift_11' ||
-          key === 'gift 11' ||
-          key === 'gift11' ||
-          key === '11' ||
-          /^gift[\s_\-]?11(?:\.\w+)?$/i.test(key)
-        ) {
-          item1Url = url;
-          return;
-        }
-      });
-
-      // If both item1 and item2 found with distinct URLs, return both
-      if (item1Url && item2Url && item1Url !== item2Url) {
-        return [item1Url, item2Url];
-      }
-
-      // If we have at least 2 distinct URLs stored for panel 11, return both
-      if (allP11Urls.length >= 2) {
-        if (item1Url) {
-          const second = allP11Urls.find((u) => u !== item1Url);
-          if (second) return [item1Url, second];
-        }
-        return [allP11Urls[0], allP11Urls[1]];
-      }
-
-      if (item1Url) return [item1Url, '/gift-11-1.png'];
-      if (item2Url) return ['/gift-11.png', item2Url];
-      if (allP11Urls.length === 1) return [allP11Urls[0], '/gift-11-1.png'];
-
-      return ['/gift-11.png', '/gift-11-1.png'];
+      const baseGift =
+        imgMap['gift-11-1'] ||
+        imgMap['11-1'] ||
+        imgMap['gift-11'] ||
+        imgMap['11'] ||
+        imgMap['gift_11'] ||
+        imgMap['gift 11'] ||
+        imgMap['gift11'] ||
+        '/gift-11-1.jpg';
+      const subItem =
+        imgMap['gift-11-2'] ||
+        imgMap['11-2'] ||
+        imgMap['gift_11_2'] ||
+        imgMap['11_2'] ||
+        imgMap['gift 11 2'] ||
+        '/gift-11-2.jpg';
+      return [baseGift, subItem];
     }
 
     // ==========================================
     // 3. ALL OTHER PANELS: Strictly ONE (1) Gift Image
     // ==========================================
-    for (const prefix of [`gift-${pStr}`, `gift_${pStr}`, `gift ${pStr}`, `gift${pStr}`, pStr]) {
-      if (imgMap[prefix]) return [imgMap[prefix]];
+    for (const prefix of [`gift-${pStr}`, `gift_${pStr}`, `gift ${pStr}`, `gift${pStr}`]) {
+      if (imgMap[prefix] && !prefix.includes('hover')) {
+        return [imgMap[prefix]];
+      }
     }
 
     for (const [rawKey, url] of Object.entries(imgMap)) {
@@ -708,7 +590,7 @@ export default function App() {
       }
     }
 
-    // Fallback if defined in static data
+    // Fallback if defined in static data (e.g. /gift-3.jpg, /gift-1.png)
     if (gift?.imageSrc) {
       return [gift.imageSrc];
     }
@@ -760,7 +642,7 @@ export default function App() {
       }
     }
 
-    return '/music-landing.svg';
+    return '/music-landing.png';
   };
 
   // Helper to retrieve the stained glass cutout overlay image for a panel
@@ -1517,89 +1399,12 @@ export default function App() {
 
   // Helper to retrieve Song 3 (Seafret - Oceans / Forget Me Not) audio file
   const getSong3Audio = (
-    imgMap: Record<string, string>,
-    song1AudioUrl?: string,
-    song2AudioUrl?: string
-  ): string | undefined => {
-    const directKeys = [
-      'song-3-audio',
-      'song_3_audio',
-      'song 3 audio',
-      'song-3-audio-seafret-oceans.mp3',
-      'song-3-audio-seafret.mp3',
-      'song-3-audio-oceans.mp3',
-      'song-3-audio-forget-me-not.mp3',
-      'oceans.mp3',
-      'oceans',
-      'seafret.mp3',
-      'seafret',
-      'seafret - oceans.mp3',
-      'seafret - oceans',
-      'vevo dscvr',
-      'vevo',
-      'dscvr',
-      'forget me not.mp3',
-      'forget-me-not.mp3',
-      'forget me not',
-      'forget-me-not',
-      'song 3.mp3',
-      'song-3.mp3',
-      'song_3.mp3',
-      'song3.mp3',
-      'track 3.mp3',
-      'track-3.mp3',
-      'track_3.mp3',
-      'track3.mp3',
-      'song-3',
-      'song_3',
-      'song 3',
-      'song3',
-      'track-3',
-      'track_3',
-      'track 3',
-      'track3',
-    ];
-    for (const key of directKeys) {
-      const url = imgMap[key];
-      // CRITICAL: NEVER return the URL if it matches Song 1 or Song 2 audio!
-      if (
-        url &&
-        (!song1AudioUrl || url !== song1AudioUrl) &&
-        (!song2AudioUrl || url !== song2AudioUrl) &&
-        !isLikelyImageKey(key)
-      ) {
-        return url;
-      }
-    }
-    // Search entries for song 3 or seafret / oceans / vevo / dscvr
-    for (const [k, url] of Object.entries(imgMap)) {
-      const lk = k.toLowerCase();
-      if (isLikelyImageKey(lk)) continue;
-      // Skip anything belonging to Song 1 (Novo Amor / State Lines) or Song 2 (Phoebe)
-      if (
-        lk.includes('novo') ||
-        lk.includes('state line') ||
-        lk.includes('greenpeace') ||
-        lk.includes('phoebe') ||
-        lk.includes('waiting') ||
-        lk.includes('kexp')
-      ) {
-        continue;
-      }
-      if (song1AudioUrl && url === song1AudioUrl) continue;
-      if (song2AudioUrl && url === song2AudioUrl) continue;
-      if (
-        lk.includes('seafret') ||
-        lk.includes('ocean') ||
-        lk.includes('vevo') ||
-        lk.includes('dscvr') ||
-        (lk.includes('forget') && (lk.endsWith('.mp3') || lk.endsWith('.wav') || lk.includes('audio'))) ||
-        ((lk.includes('song') || lk.includes('track')) && (lk.includes('3') || lk.includes('three')))
-      ) {
-        return url;
-      }
-    }
-    return '/song-3.mp3';
+    _imgMap?: Record<string, string>,
+    _song1AudioUrl?: string,
+    _song2AudioUrl?: string
+  ): string => {
+    // Always return the exact trimmed 211s audio asset with cache-buster
+    return '/song-3.mp3?v=trimmed-211s';
   };
 
   // Helper to retrieve Song 4 (SYML - Where's My Love / Paper Crane) audio file
@@ -2700,12 +2505,11 @@ export default function App() {
           );
         }
       } else if (name.includes('hover')) {
-        // Stained glass cutout overlay
+        // Stained glass cutout overlay - do NOT save bare pId so it never conflicts with gift photos
         const match = name.match(/(\d+)/);
         if (match) {
           const pId = match[1];
           keysToSave.push(
-            pId,
             `hover_${pId}`,
             `hover-${pId}`,
             `hover ${pId}`,
@@ -2803,6 +2607,71 @@ export default function App() {
       setStatusMessage(`Successfully loaded ${loadedCount} asset${loadedCount > 1 ? 's' : ''}`);
       setTimeout(() => setStatusMessage(null), 3500);
     }
+  };
+
+  // Direct gift photo replacement handler (modal or drawer)
+  const handleUploadGiftImage = async (panelId: number, file: File, itemIndex?: number) => {
+    const objectUrl = URL.createObjectURL(file);
+    const ext = file.name.split('.').pop() || 'png';
+    const keysToSave: string[] = [];
+
+    if (itemIndex) {
+      keysToSave.push(
+        `gift-${panelId}-${itemIndex}`,
+        `gift_${panelId}_${itemIndex}`,
+        `gift ${panelId}-${itemIndex}`,
+        `gift ${panelId} ${itemIndex}`,
+        `${panelId}-${itemIndex}`
+      );
+      if (itemIndex === 1) {
+        keysToSave.push(
+          `gift-${panelId}`,
+          `gift_${panelId}`,
+          `gift ${panelId}`,
+          `gift${panelId}`
+        );
+      }
+    } else {
+      keysToSave.push(
+        `gift-${panelId}`,
+        `gift_${panelId}`,
+        `gift ${panelId}`,
+        `gift${panelId}`
+      );
+    }
+
+    const updated = { ...images };
+    for (const key of keysToSave) {
+      await saveImageToDB(key, file);
+      updated[key] = objectUrl;
+    }
+
+    const fileNamesToPersist: string[] = [];
+    if (itemIndex) {
+      fileNamesToPersist.push(
+        `gift-${panelId}-${itemIndex}.${ext}`,
+        `gift-${panelId}-${itemIndex}.png`,
+        `gift-${panelId}-${itemIndex}.jpg`
+      );
+      if (itemIndex === 1) {
+        fileNamesToPersist.push(
+          `gift-${panelId}.${ext}`,
+          `gift-${panelId}.png`,
+          `gift-${panelId}.jpg`
+        );
+      }
+    } else {
+      fileNamesToPersist.push(
+        `gift-${panelId}.${ext}`,
+        `gift-${panelId}.png`,
+        `gift-${panelId}.jpg`
+      );
+    }
+
+    persistFileDirectlyToServer(file, `gift-${panelId}.${ext}`, fileNamesToPersist);
+    setImages(updated);
+    setStatusMessage(`Saved gift image for Panel ${panelId}${itemIndex ? ` Item ${itemIndex}` : ''}!`);
+    setTimeout(() => setStatusMessage(null), 3500);
   };
 
   // Direct single panel item replacement handler (e.g. Panel 5 Item 2)
