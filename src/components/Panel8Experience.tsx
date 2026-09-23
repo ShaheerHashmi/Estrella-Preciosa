@@ -1472,19 +1472,16 @@ export const Panel8Experience: React.FC<Panel8ExperienceProps> = ({
                 }
               }}
             >
-              {(landingImageSrc || '/music-landing.png' || '/static.png') ? (
+              {(landingImageSrc || '/music-landing.svg') ? (
                 /* Interactive Landing Image Container with seamless Hover transitions and Cassette Playing State */
                 <div className="relative inline-flex items-center justify-center max-h-[83vh] max-w-full select-none py-1">
                   {/* 1. Base Dimension Anchor: Static Landing Image (always maintains the exact container dimensions and aspect ratio) */}
                   <img
-                    src={landingImageSrc || '/music-landing.png'}
+                    src={landingImageSrc || '/music-landing.svg'}
                     alt="Music Player Home Screen"
                     onError={(e) => {
-                      const target = e.currentTarget as HTMLImageElement;
-                      if (!target.src.endsWith('/music-landing.png')) {
-                        target.src = '/music-landing.png';
-                      } else if (!target.src.endsWith('/static.png')) {
-                        target.src = '/static.png';
+                      if ((e.currentTarget as HTMLImageElement).src !== window.location.origin + '/music-landing.svg') {
+                        (e.currentTarget as HTMLImageElement).src = '/music-landing.svg';
                       }
                     }}
                     className={`max-h-[83vh] w-auto max-w-full object-contain rounded-xl drop-shadow-2xl select-none pointer-events-none transition-opacity duration-150 ease-out ${

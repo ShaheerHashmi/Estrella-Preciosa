@@ -32,7 +32,7 @@ I've made many a wish in my life, but wanted this bowl to encapsulate some of th
     story: `Ahhh the Estrella Preciosa pin, it's really pretty isn't it? :p Spoiler alert: None of the 21 had anything Scribbellz themed, but we've had such a precious time together bonding over the star comics and the wholesomeness of it all, what a perfect coincidence that I found this pin in my Newcastle trip? It symbolises a beautiful skyline in the confines of such an ethereal and out of this world star. See now why I thought it'd be the perfect pin to get you as part of this year's birthday gifts? 
 
 I hope and pray no matter where you keep this, that it reminds you to always let her shine and be her radiant, incandescent, gorgeous self through and through. To brighter and lighter tomorrows`,
-    imageSrc: '/gift-3.jpg',
+    imageSrc: '/gift-3.png',
     dateOrDay: 'Panel 3',
     category: 'Pin',
   },

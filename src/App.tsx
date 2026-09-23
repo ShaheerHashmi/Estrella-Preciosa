@@ -256,6 +256,7 @@ export default function App() {
 
   // Background persistence of stored browser blobs to server public/ folder so they are permanent on disk
   const syncStoredImagesToServer = async (stored: Record<string, string>) => {
+    return;
     try {
       const entries = Object.entries(stored);
       if (entries.length === 0) return;
@@ -485,13 +486,12 @@ export default function App() {
     }
   };
 
-  // Load all embedded window images from persistence and sync to server disk
+  // Load all embedded window images from persistence
   useEffect(() => {
     getAllImagesFromDB().then((stored) => {
       if (stored && Object.keys(stored).length > 0) {
         healMusicAudioKeys(stored);
         setImages(stored);
-        syncStoredImagesToServer(stored);
       }
     });
   }, []);
@@ -696,7 +696,7 @@ export default function App() {
     // ==========================================
     // 3. ALL OTHER PANELS: Strictly ONE (1) Gift Image
     // ==========================================
-    for (const prefix of [`gift-${pStr}`, `gift_${pStr}`, `gift ${pStr}`, `gift${pStr}`]) {
+    for (const prefix of [`gift-${pStr}`, `gift_${pStr}`, `gift ${pStr}`, `gift${pStr}`, pStr]) {
       if (imgMap[prefix]) return [imgMap[prefix]];
     }
 
@@ -708,19 +708,9 @@ export default function App() {
       }
     }
 
-    // Direct match by gift key without hover
-    if (imgMap[pStr] && !imgMap[pStr].includes('Hover') && !imgMap[pStr].includes('hover')) {
-      return [imgMap[pStr]];
-    }
-
     // Fallback if defined in static data
     if (gift?.imageSrc) {
       return [gift.imageSrc];
-    }
-
-    // Special cases
-    if (panelId === 3) {
-      return ['/gift-3.jpg'];
     }
 
     // Final reliable fallback to static asset in public/
@@ -770,7 +760,7 @@ export default function App() {
       }
     }
 
-    return '/music-landing.png';
+    return '/music-landing.svg';
   };
 
   // Helper to retrieve the stained glass cutout overlay image for a panel
@@ -2815,24 +2805,20 @@ export default function App() {
     }
   };
 
-  // Direct single panel item replacement handler (e.g. Panel 1, or Panel 5 Item 2)
+  // Direct single panel item replacement handler (e.g. Panel 5 Item 2)
   const handleSavePanelItemImage = async (panelId: number, itemIndex: number, file: File) => {
-    const keysToSave: string[] = [];
-    let canonicalFileName = `gift-${panelId}.png`;
+    const keysToSave = [
+      `gift-${panelId}-${itemIndex}`,
+      `gift_${panelId}_${itemIndex}`,
+      `gift ${panelId}-${itemIndex}`,
+      `gift ${panelId} ${itemIndex}`,
+      `${panelId}-${itemIndex}`,
+      `${panelId}_${itemIndex}`,
+      `${panelId}.${itemIndex}`,
+    ];
 
-    if (panelId === 5) {
-      canonicalFileName = itemIndex === 2 ? 'gift-5-2.png' : 'gift-5-1.png';
-      keysToSave.push(`gift-5-${itemIndex}`, `gift_5_${itemIndex}`, `gift 5 ${itemIndex}`, `5-${itemIndex}`, `5_${itemIndex}`, `5.${itemIndex}`);
-    } else if (panelId === 11) {
-      canonicalFileName = itemIndex === 2 ? 'gift-11-1.png' : 'gift-11.png';
-      if (itemIndex === 2) {
-        keysToSave.push('gift-11-1', 'gift_11_1', '11-1', '11_1', '11.1');
-      } else {
-        keysToSave.push('gift-11', 'gift_11', 'gift 11', '11');
-      }
-    } else {
-      canonicalFileName = `gift-${panelId}.png`;
-      keysToSave.push(`gift-${panelId}`, `gift_${panelId}`, `gift ${panelId}`);
+    if (itemIndex === 1 && panelId !== 5) {
+      keysToSave.push(`gift-${panelId}`, `gift_${panelId}`, `gift ${panelId}`, `${panelId}`);
     }
 
     const objectUrl = URL.createObjectURL(file);
@@ -2844,12 +2830,12 @@ export default function App() {
 
     persistFileDirectlyToServer(
       file,
-      canonicalFileName,
+      `gift-${panelId}-${itemIndex}.png`,
       keysToSave.map((k) => (k.includes('.') ? k : `${k}.png`))
     );
 
     setImages(updated);
-    setStatusMessage(`Successfully updated Panel ${panelId} ${panelId === 5 || panelId === 11 ? `Item ${itemIndex}` : ''} image`);
+    setStatusMessage(`Successfully updated Panel ${panelId} Item ${itemIndex} image`);
     setTimeout(() => setStatusMessage(null), 3500);
   };
 

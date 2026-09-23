@@ -108,13 +108,13 @@ export const HARDCODED_PANEL_HOVERS: Record<number, PanelHoverDefinition> = {
   16: {
     id: 16,
     name: 'Panel 16',
-    defaultSrc: '/17 - Hover.png',
+    defaultSrc: '/16 - Hover.png',
     keys: ['hover_16', 'hover-16', 'hover 16', 'hover16', '16_hover', '16-hover', '16 - hover', '16 - hover.png', '16-hover.png', '16_hover.png', 'panel-16-hover', 'panel_16_hover', '16'],
   },
   17: {
     id: 17,
     name: 'Panel 17',
-    defaultSrc: '/16 - Hover.png',
+    defaultSrc: '/17 - Hover.png',
     keys: ['hover_17', 'hover-17', 'hover 17', 'hover17', '17_hover', '17-hover', '17 - hover', '17 - hover.png', '17-hover.png', '17_hover.png', 'panel-17-hover', 'panel_17_hover', '17'],
   },
   18: {
