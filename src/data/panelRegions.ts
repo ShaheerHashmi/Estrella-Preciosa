@@ -192,7 +192,7 @@ export const PANEL_REGIONS: PanelRegion[] = [
     cx: 382,
     cy: 396,
     r: 42,
-    imageSrc: '/16 - Hover.png',
+    imageSrc: '/17 - Hover.png',
   },
   {
     id: 17,
@@ -202,7 +202,7 @@ export const PANEL_REGIONS: PanelRegion[] = [
     cx: 509,
     cy: 396,
     r: 42,
-    imageSrc: '/17 - Hover.png',
+    imageSrc: '/16 - Hover.png',
   },
   {
     id: 18,

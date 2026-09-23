@@ -718,6 +718,11 @@ export default function App() {
       return [gift.imageSrc];
     }
 
+    // Special cases
+    if (panelId === 3) {
+      return ['/gift-3.jpg'];
+    }
+
     // Final reliable fallback to static asset in public/
     return [`/gift-${pStr}.png`];
   };
@@ -765,7 +770,7 @@ export default function App() {
       }
     }
 
-    return '/music-landing.svg';
+    return '/music-landing.png';
   };
 
   // Helper to retrieve the stained glass cutout overlay image for a panel
